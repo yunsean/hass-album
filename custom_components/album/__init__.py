@@ -175,28 +175,66 @@ class AlumbList(HomeAssistantView):
         rootdir = os.path.join(self._storagePath, user, localpath)
         files = []
         folders = []
-        if os.path.exists(rootdir) and os.path.isdir(rootdir):
-            lines = os.listdir(rootdir)
-            for line in lines:
-                if line.endswith('.partial'):
-                    continue
-                if line.startswith("."):
-                	continue
-                if line == '@eaDir':
-                	continue
-                filepath = os.path.join(rootdir, line)
-                if wanttime:
-                    fsize = os.path.getsize(filepath)
-                    mtime = int(os.path.getmtime(filepath))
-                    if os.path.isdir(filepath):
-                        folders.append({"name": line, "size": fsize, "mtime": mtime})
-                    if os.path.isfile(filepath):
-                        files.append({"name": line, "size": fsize, "mtime": mtime})
-                else:
-                    if os.path.isdir(filepath):
+        if "pageIndex" in queries:
+            pageIndex = int(queries["pageIndex"])
+            pageSize = 20000 if ("pageSize" not in queries) else int(queries["pageSize"])
+            if os.path.exists(rootdir) and os.path.isdir(rootdir):
+                if pageIndex == 0:
+                    for file in os.scandir(rootdir):
+                        if not file.is_dir(follow_symlinks = False):
+                            continue
+                        line = file.name
+                        if line.endswith('.partial'):
+                            continue
+                        if line.startswith("."):
+                            continue
+                        if line == '@eaDir':
+                            continue
                         folders.append({"name": line})
-                    if os.path.isfile(filepath):
+                count = 0
+                for file in os.scandir(rootdir):
+                    if not file.is_file(follow_symlinks = False):
+                        continue
+                    line = file.name
+                    if line.endswith('.partial'):
+                        continue
+                    if line.startswith("."):
+                        continue
+                    if line == '@eaDir':
+                        continue
+                    if count < pageSize * pageIndex:
+                        count = count + 1
+                        continue
+                    count = count + 1
+                    if count > pageSize * pageIndex + pageSize:
+                        break
+                    if wanttime:
+                        stat = file.stat()
+                        files.append({"name": line, "size": stat.st_size, "mtime": int(stat.st_mtime)})
+                    else:
                         files.append({"name": line})
+        else:
+            if os.path.exists(rootdir) and os.path.isdir(rootdir):
+                lines = os.scandir(rootdir)
+                for file in lines:
+                    line = file.name
+                    if line.endswith('.partial'):
+                        continue
+                    if line.startswith("."):
+                    	continue
+                    if line == '@eaDir':
+                    	continue
+                    if wanttime:
+                        stat = file.stat()
+                        if file.is_dir(follow_symlinks = False):
+                            folders.append({"name": line, "size": stat.st_size, "mtime": int(stat.st_mtime)})
+                        if file.is_file(follow_symlinks = False):
+                            files.append({"name": line, "size": stat.st_size, "mtime": int(stat.st_mtime)})
+                    else:
+                        if file.is_dir(follow_symlinks = False):
+                            folders.append({"name": line})
+                        if file.is_file(follow_symlinks = False):
+                            files.append({"name": line})
         return self.json({"folders": folders, "files": files})
 
 
