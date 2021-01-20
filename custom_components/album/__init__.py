@@ -30,6 +30,7 @@ from homeassistant.components.http import (
 from homeassistant.const import (
     ATTR_ENTITY_ID, HTTP_UNPROCESSABLE_ENTITY, HTTP_BAD_REQUEST, HTTP_SERVICE_UNAVAILABLE, HTTP_NOT_FOUND
 )
+from homeassistant.util import sanitize_path
 
 CONF_STORAGE_PATH = 'storage_path'
 ATTR_USER = 'user'
@@ -72,7 +73,11 @@ class AlumbSync(HomeAssistantView):
         if ATTR_LOCALPATH not in queries :
             return ('Local path not specified.', HTTP_BAD_REQUEST)
         user = queries[ATTR_USER]
+        if user != sanitize_path(user):
+            raise web.HTTPBadRequest
         localpath = queries[ATTR_LOCALPATH].lstrip('/')
+        if localpath != sanitize_path(localpath):
+            raise web.HTTPBadRequest
         filepath = os.path.join(self._storagePath, user, localpath)
         if os.path.exists(filepath):
             md5 = get_md5_01(filepath)
@@ -88,7 +93,11 @@ class AlumbSync(HomeAssistantView):
         if ATTR_LOCALPATH not in queries :
             return ('Local path not specified.', HTTP_BAD_REQUEST)
         user = queries[ATTR_USER]
+        if user != sanitize_path(user):
+            raise web.HTTPBadRequest
         localpath = queries[ATTR_LOCALPATH].lstrip('/')
+        if localpath != sanitize_path(localpath):
+            raise web.HTTPBadRequest
         filepath = os.path.join(self._storagePath, user, localpath)
         (parentpath,_) = os.path.split(filepath)
         if os.path.exists(filepath):
@@ -106,7 +115,11 @@ class AlumbSync(HomeAssistantView):
         if ATTR_LOCALPATH not in queries :
             return ('Local path not specified.', HTTP_BAD_REQUEST)
         user = queries[ATTR_USER]
+        if user != sanitize_path(user):
+            raise web.HTTPBadRequest
         localpath = queries[ATTR_LOCALPATH].lstrip('/')
+        if localpath != sanitize_path(localpath):
+            raise web.HTTPBadRequest
         filepath = os.path.join(self._storagePath, user, localpath)
         (parentpath,_) = os.path.split(filepath)
         os.makedirs(parentpath, exist_ok = True)
@@ -171,6 +184,10 @@ class AlumbList(HomeAssistantView):
         else:
             localpath = ""
         user = queries[ATTR_USER]
+        if user != sanitize_path(user):
+            raise web.HTTPBadRequest
+        if localpath != sanitize_path(localpath):
+            raise web.HTTPBadRequest
         wanttime = ATTR_WANTTIME in queries
         rootdir = os.path.join(self._storagePath, user, localpath)
         files = []
@@ -320,7 +337,11 @@ class AlumbPreview(HomeAssistantView):
         if ATTR_LOCALPATH not in queries :
             return ('Local path not specified.', HTTP_BAD_REQUEST)
         user = queries[ATTR_USER]
+        if user != sanitize_path(user):
+            raise web.HTTPBadRequest
         localpath = queries[ATTR_LOCALPATH].lstrip('/')
+        if localpath != sanitize_path(localpath):
+            raise web.HTTPBadRequest
         rawfile = os.path.join(self._storagePath, user, localpath)
         parentpath = os.path.dirname(rawfile)
         thumbdir = os.path.join(parentpath, "@eaDir", os.path.basename(localpath))
@@ -437,7 +458,11 @@ class AlumbDownload(HomeAssistantView):
         if ATTR_LOCALPATH not in queries :
             return ('Local path not specified.', HTTP_BAD_REQUEST)
         user = queries[ATTR_USER]
+        if user != sanitize_path(user):
+            raise web.HTTPBadRequest
         localpath = queries[ATTR_LOCALPATH].lstrip('/')
+        if localpath != sanitize_path(localpath):
+            raise web.HTTPBadRequest
         filepath = os.path.join(self._storagePath, user, localpath)
         if not os.path.exists(filepath):
             return ('File not exist.', HTTP_NOT_FOUND)     
@@ -480,6 +505,8 @@ class AlumbCheck(HomeAssistantView):
         if ATTR_USER not in queries :
             return ('User not specified.', HTTP_BAD_REQUEST)
         user = queries[ATTR_USER]
+        if user != sanitize_path(user):
+            raise web.HTTPBadRequest
         exists = []
         for item in data:
             path = item['path']
